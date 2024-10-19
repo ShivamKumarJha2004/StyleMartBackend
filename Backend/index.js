@@ -109,7 +109,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     res.json({
         success: 1,
         // Ensure the correct hosted URL is used for the image
-        image_url: `https://stylemart-ecom-backend.onrender.com/images/${req.file.filename}`
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`
     });
 });
 
