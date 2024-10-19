@@ -50,7 +50,7 @@ const fetchUser = async (req, res, next) => {
     }
 
     try {
-        const data = jwt.verify(token, 'secret_ecom');
+        const data = jwt.verify(token, process.env.JWT_SECRET); // Use JWT secret from env
         req.user = data.user;
         next();
     } catch (error) {
@@ -108,6 +108,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     }
     res.json({
         success: 1,
+        // Ensure the correct hosted URL is used for the image
         image_url: `https://stylemart-ecom-backend.onrender.com/images/${req.file.filename}`
     });
 });
