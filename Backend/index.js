@@ -25,7 +25,12 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+// CORS configuration
+app.use(cors({
+    origin: '*',  // Change if needed to restrict access
+    methods: ["GET", "POST", "PUT", "DELETE"],
+}));
 
 // Routes
 app.use("/api", productRoutes);
@@ -104,11 +109,14 @@ app.use("/images", express.static(path.join(__dirname, 'upload/images')));
 // Image upload endpoint
 app.post("/upload", upload.single('product'), (req, res) => {
     if (!req.file) {
+        console.log("No file uploaded"); // Log for debugging
         return res.status(400).send('No file uploaded.');
     }
+
+    console.log(`Uploaded file: ${req.file.filename}`); // Log the uploaded file name
+
     res.json({
         success: 1,
-        // Ensure the correct hosted URL is used for the image
         image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`
     });
 });
