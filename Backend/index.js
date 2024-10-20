@@ -111,7 +111,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     // Return the public URL of the uploaded image
     res.json({
         success: 1,
-        image_url: `https://yourdomain.com/images/${req.file.filename}` // Use your domain here
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}` // Use your domain here
     });
 });
 
