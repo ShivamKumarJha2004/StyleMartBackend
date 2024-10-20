@@ -5,66 +5,86 @@ import multer from "multer";
 import path from "path";
 import cors from "cors";
 import { fileURLToPath } from 'url'; // Import for __dirname workaround
-import productRoutes from "./Routes/productRoutes.js";
-import User from "./Model/UserSchema.js";
+import productRoutes from "./Routes/productRoutes.js"; // Routes for products (make sure the path is correct)
+import User from "./Model/UserSchema.js"; // User schema/model (ensure the path is correct)
 import dotenv from "dotenv";
 
-// Load environment variables
+// Load environment variables from the .env file
 dotenv.config();
 
 // Get the values from the .env file
 const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// __dirname workaround
+// __dirname workaround for ES6 modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Initialize express app
 const app = express();
 
-// Middleware
+// Middleware to parse incoming JSON data
 app.use(express.json());
 
-// CORS configuration with specific origin for security
+// Enable CORS with all origins (adjust as necessary)
 app.use(cors({
-    origin: '*',  // Adjust to your frontend domain if needed for mobile
+    origin: '*',  // You can restrict access to specific origins here
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true // Allows cookies or tokens to be sent with requests
 }));
 
-// Routes
+// Use product routes
 app.use("/api", productRoutes);
 
-// MongoDB connection using environment variable
+// MongoDB connection using MONGODB_URI from .env
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-    .then(() => console.log("Connected to MongoDB"))
-    .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-// Middleware to fetch the user based on the auth-token
+// Middleware to fetch user from JWT token
 const fetchUser = async (req, res, next) => {
     const token = req.header('auth-token');
-    console.log("Token", token);
-
     if (!token) {
-        return res.status(401).send({
-            errors: "Please authenticate using a valid token"
-        });
+        return res.status(401).send({ errors: "Please authenticate using a valid token" });
     }
 
     try {
-        const data = jwt.verify(token, process.env.JWT_SECRET); // Use JWT secret from env
+        const data = jwt.verify(token, JWT_SECRET); // JWT_SECRET from .env
         req.user = data.user;
         next();
     } catch (error) {
-        return res.status(401).send({
-            errors: "Please authenticate using a valid token"
-        });
+        return res.status(401).send({ errors: "Please authenticate using a valid token" });
     }
 };
+
+// Multer setup for file uploads with absolute path resolution
+const storage = multer.diskStorage({
+    destination: path.resolve(__dirname, "upload/images"), // Ensure absolute path for images directory
+    filename: (req, file, cb) => {
+        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`); // Unique file names with timestamp
+    }
+});
+
+const upload = multer({ storage: storage });
+
+// Serve static images from the upload folder
+app.use("/images", express.static(path.resolve(__dirname, 'upload/images')));
+
+// Image upload endpoint
+app.post("/upload", upload.single('product'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
+
+    // Return the image URL in the response
+    res.json({
+        success: 1,
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`  // Ensure the backend URL is correct
+    });
+});
 
 // Add to cart endpoint
 app.post('/addtocart', fetchUser, async (req, res) => {
@@ -92,43 +112,12 @@ app.post('/getcart', fetchUser, async (req, res) => {
     res.json(userdata.cartData);
 });
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-    destination: "./upload/images", // Directory where images will be saved
-    filename: (req, file, cb) => {
-        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
-
-const upload = multer({
-    storage: storage
-});
-
-// Serve static images from the upload folder using __dirname
-app.use("/images", express.static(path.join(__dirname, 'upload/images')));
-
-// Image upload endpoint
-app.post("/upload", upload.single('product'), (req, res) => {
-    if (!req.file) {
-        console.log("No file uploaded");
-        return res.status(400).send('No file uploaded.');
-    }
-
-    console.log(`Uploaded file: ${req.file.filename}`);
-
-    // Ensure absolute URLs are sent to the client
-    res.json({
-        success: 1,
-        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`
-    });
-});
-
 // Default route
 app.get("/", (req, res) => {
     res.send("Express is Running");
 });
 
-// Start the server using the environment variable
+// Start the server and listen on the specified port
 app.listen(PORT, (e) => {
     if (!e) {
         console.log(`Server running on port ${PORT}`);
