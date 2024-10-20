@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import cors from "cors";
-import { fileURLToPath } from 'url'; // For __dirname workaround
+import { fileURLToPath } from 'url'; // Import for __dirname workaround
 import productRoutes from "./Routes/productRoutes.js";
 import User from "./Model/UserSchema.js";
 import dotenv from "dotenv";
@@ -26,17 +26,15 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// CORS configuration to allow access from any origin
+// CORS configuration with specific origin for security
 app.use(cors({
-    origin: '*',  // Allow all origins
+    origin: '*',  // Adjust to your frontend domain if needed for mobile
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ['auth-token', 'Content-Type'],
+    credentials: true // Allows cookies or tokens to be sent with requests
 }));
 
-// Serve static images from 'upload/images' directory
-app.use("/images", express.static(path.join(__dirname, 'upload/images'), {
-    maxAge: '1d',  // Cache images for 1 day to improve performance
-}));
+// Routes
+app.use("/api", productRoutes);
 
 // MongoDB connection using environment variable
 mongoose.connect(MONGODB_URI, {
@@ -49,6 +47,8 @@ mongoose.connect(MONGODB_URI, {
 // Middleware to fetch the user based on the auth-token
 const fetchUser = async (req, res, next) => {
     const token = req.header('auth-token');
+    console.log("Token", token);
+
     if (!token) {
         return res.status(401).send({
             errors: "Please authenticate using a valid token"
@@ -56,7 +56,7 @@ const fetchUser = async (req, res, next) => {
     }
 
     try {
-        const data = jwt.verify(token, process.env.JWT_SECRET);
+        const data = jwt.verify(token, process.env.JWT_SECRET); // Use JWT secret from env
         req.user = data.user;
         next();
     } catch (error) {
@@ -71,17 +71,19 @@ app.post('/addtocart', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
     userdata.cartData[req.body.itemid] += 1;
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
-    res.send("Added to cart");
+    res.send("Added");
 });
 
 // Remove product from cart endpoint
 app.post('/removeproduct', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
+    
     if (userdata.cartData[req.body.itemid] > 0) {
         userdata.cartData[req.body.itemid] -= 1;
     }
+    
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
-    res.send("Removed from cart");
+    res.send("Removed");
 });
 
 // Get cart data
@@ -92,7 +94,7 @@ app.post('/getcart', fetchUser, async (req, res) => {
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
-    destination: "./upload/images",  // Directory for image uploads
+    destination: "./upload/images", // Directory where images will be saved
     filename: (req, file, cb) => {
         cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
     }
@@ -102,16 +104,22 @@ const upload = multer({
     storage: storage
 });
 
+// Serve static images from the upload folder using __dirname
+app.use("/images", express.static(path.join(__dirname, 'upload/images')));
+
 // Image upload endpoint
 app.post("/upload", upload.single('product'), (req, res) => {
     if (!req.file) {
+        console.log("No file uploaded");
         return res.status(400).send('No file uploaded.');
     }
 
-    // Return the public URL of the uploaded image
+    console.log(`Uploaded file: ${req.file.filename}`);
+
+    // Ensure absolute URLs are sent to the client
     res.json({
         success: 1,
-        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}` // Use your domain here
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`
     });
 });
 
