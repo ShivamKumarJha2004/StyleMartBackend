@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import cors from "cors";
-import { fileURLToPath } from 'url'; // Import for __dirname workaround
+import { fileURLToPath } from 'url'; // For __dirname workaround
 import productRoutes from "./Routes/productRoutes.js";
 import User from "./Model/UserSchema.js";
 import dotenv from "dotenv";
@@ -15,7 +15,6 @@ dotenv.config();
 // Get the values from the .env file
 const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // __dirname workaround
 const __filename = fileURLToPath(import.meta.url);
@@ -27,21 +26,22 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// CORS configuration allowing access from all origins and all headers
+// CORS configuration
 app.use(cors({
-    origin: '*',  
+    origin: '*',  // Allow all origins for cross-device access
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ['auth-token', 'Content-Type'],
-    credentials: true,  // Enable cookies if needed
 }));
+
+// Routes
+app.use("/api", productRoutes);
 
 // MongoDB connection using environment variable
 mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
 // Middleware to fetch the user based on the auth-token
 const fetchUser = async (req, res, next) => {
@@ -55,7 +55,7 @@ const fetchUser = async (req, res, next) => {
     }
 
     try {
-        const data = jwt.verify(token, JWT_SECRET); // Use JWT secret from env
+        const data = jwt.verify(token, process.env.JWT_SECRET); // Use JWT secret from env
         req.user = data.user;
         next();
     } catch (error) {
@@ -68,7 +68,7 @@ const fetchUser = async (req, res, next) => {
 // Add to cart endpoint
 app.post('/addtocart', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
-    userdata.cartData[req.body.itemid] = (userdata.cartData[req.body.itemid] || 0) + 1;
+    userdata.cartData[req.body.itemid] += 1;
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
     res.send("Added");
 });
@@ -76,11 +76,11 @@ app.post('/addtocart', fetchUser, async (req, res) => {
 // Remove product from cart endpoint
 app.post('/removeproduct', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
-    
+
     if (userdata.cartData[req.body.itemid] > 0) {
         userdata.cartData[req.body.itemid] -= 1;
     }
-    
+
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
     res.send("Removed");
 });
@@ -103,24 +103,21 @@ const upload = multer({
     storage: storage
 });
 
-// Serve static images from the upload folder using __dirname with caching
-app.use("/images", express.static(path.join(__dirname, 'upload/images'), {
-    maxAge: '1d',  // Cache images for 1 day for faster load on mobile devices
-    etag: false    // Disable ETag for simplicity
-}));
+// Serve static images from the upload folder using __dirname
+app.use("/images", express.static(path.join(__dirname, 'upload/images')));
 
 // Image upload endpoint
 app.post("/upload", upload.single('product'), (req, res) => {
     if (!req.file) {
-        console.log("No file uploaded");
+        console.log("No file uploaded"); // Log for debugging
         return res.status(400).send('No file uploaded.');
     }
 
-    console.log(`Uploaded file: ${req.file.filename}`);
+    console.log(`Uploaded file: ${req.file.filename}`); // Log the uploaded file name
 
     res.json({
         success: 1,
-        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}` // Absolute URL
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`
     });
 });
 
