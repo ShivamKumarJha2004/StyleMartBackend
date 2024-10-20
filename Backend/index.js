@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import cors from "cors";
-import { fileURLToPath } from 'url'; // Import for __dirname workaround
+import { fileURLToPath } from 'url'; // For __dirname workaround
 import productRoutes from "./Routes/productRoutes.js";
 import User from "./Model/UserSchema.js";
 import dotenv from "dotenv";
@@ -28,7 +28,7 @@ app.use(express.json());
 
 // CORS configuration
 app.use(cors({
-    origin: '*',  // Change if needed to restrict access
+    origin: '*',  // Allow all origins for cross-device access
     methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 
@@ -37,11 +37,11 @@ app.use("/api", productRoutes);
 
 // MongoDB connection using environment variable
 mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
 // Middleware to fetch the user based on the auth-token
 const fetchUser = async (req, res, next) => {
@@ -76,11 +76,11 @@ app.post('/addtocart', fetchUser, async (req, res) => {
 // Remove product from cart endpoint
 app.post('/removeproduct', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
-    
+
     if (userdata.cartData[req.body.itemid] > 0) {
         userdata.cartData[req.body.itemid] -= 1;
     }
-    
+
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
     res.send("Removed");
 });
