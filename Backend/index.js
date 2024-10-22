@@ -4,47 +4,45 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import cors from "cors";
-import { fileURLToPath } from 'url'; // Import for __dirname workaround
-import productRoutes from "./Routes/productRoutes.js"; // Routes for products (make sure the path is correct)
-import User from "./Model/UserSchema.js"; // User schema/model (ensure the path is correct)
+import { fileURLToPath } from 'url';
+import productRoutes from "./Routes/productRoutes.js";
+import User from "./Model/UserSchema.js";
 import dotenv from "dotenv";
 
-// Load environment variables from the .env file
 dotenv.config();
 
-// Get the values from the .env file
 const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// __dirname workaround for ES6 modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize express app
 const app = express();
 
-// Middleware to parse incoming JSON data
 app.use(express.json());
 
-// Enable CORS with all origins (adjust as necessary)
+// Enable CORS (adjust if you need to restrict)
 app.use(cors({
-    origin: '*',  // You can restrict access to specific origins here
+    origin: '*',
     methods: ["GET", "POST", "PUT", "DELETE"],
 }));
+
+// Serve static files for images and other assets
+app.use("/images", express.static(path.resolve(__dirname, 'upload/images')));
 
 // Use product routes
 app.use("/api", productRoutes);
 
-// MongoDB connection using MONGODB_URI from .env
+// MongoDB connection
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
-// Middleware to fetch user from JWT token
+// JWT Middleware for protected routes
 const fetchUser = async (req, res, next) => {
     const token = req.header('auth-token');
     if (!token) {
@@ -52,7 +50,7 @@ const fetchUser = async (req, res, next) => {
     }
 
     try {
-        const data = jwt.verify(token, JWT_SECRET); // JWT_SECRET from .env
+        const data = jwt.verify(token, JWT_SECRET);
         req.user = data.user;
         next();
     } catch (error) {
@@ -60,18 +58,14 @@ const fetchUser = async (req, res, next) => {
     }
 };
 
-// Multer setup for file uploads with absolute path resolution
+// Multer setup for image uploads
 const storage = multer.diskStorage({
-    destination: path.resolve(__dirname, "upload/images"), // Ensure absolute path for images directory
+    destination: path.resolve(__dirname, "upload/images"),
     filename: (req, file, cb) => {
-        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`); // Unique file names with timestamp
+        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
     }
 });
-
 const upload = multer({ storage: storage });
-
-// Serve static images from the upload folder
-app.use("/images", express.static(path.resolve(__dirname, 'upload/images')));
 
 // Image upload endpoint
 app.post("/upload", upload.single('product'), (req, res) => {
@@ -82,7 +76,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     // Return the image URL in the response
     res.json({
         success: 1,
-        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}`  // Ensure the backend URL is correct
+        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}` 
     });
 });
 
@@ -97,27 +91,25 @@ app.post('/addtocart', fetchUser, async (req, res) => {
 // Remove product from cart endpoint
 app.post('/removeproduct', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
-    
     if (userdata.cartData[req.body.itemid] > 0) {
         userdata.cartData[req.body.itemid] -= 1;
     }
-    
     await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userdata.cartData });
     res.send("Removed");
 });
 
-// Get cart data
+// Get cart data endpoint
 app.post('/getcart', fetchUser, async (req, res) => {
     let userdata = await User.findOne({ _id: req.user.id });
     res.json(userdata.cartData);
 });
 
-// Default route
+// Default route for server status
 app.get("/", (req, res) => {
     res.send("Express is Running");
 });
 
-// Start the server and listen on the specified port
+// Start the server
 app.listen(PORT, (e) => {
     if (!e) {
         console.log(`Server running on port ${PORT}`);
