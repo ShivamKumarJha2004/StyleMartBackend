@@ -40,6 +40,7 @@ export const sendVerificationCode = async (req, res) => {
       success: true,
       message: 'Verification code sent to your email',
     });
+  
   } catch (error) {
     console.error('Error sending verification code:', error);
     res.status(500).json({
@@ -96,7 +97,7 @@ export const verifyEmail = async (req, res) => {
     console.error('Error verifying email:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal Server Error',
+      error: 'error.message',
     });
   }
 };
