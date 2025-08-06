@@ -13,10 +13,10 @@ export const sendVerificationCode = async (req, res) => {
     
     // Check if user exists
     const user = await User.findOne({ email });
-    if (user) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User Already Registered !!',
+        error: 'User not found',
       });
     }
     
@@ -181,13 +181,7 @@ export const resetPassword = async (req, res) => {
     }
     
     // Update password and clear reset token
-    // In a production environment, you should hash the new password
-    // const salt = await bcrypt.genSalt(10);
-    // const hashedPassword = await bcrypt.hash(newPassword, salt);
-    // user.password = hashedPassword;
-    
-    // For now, we'll keep it simple as the original code doesn't hash passwords
-    user.password = newPassword;
+    // In a production envir  user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
     
