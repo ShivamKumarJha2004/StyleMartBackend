@@ -7,6 +7,9 @@ import  {userLogin}  from "../Controller/ProductController/User/RegUser.js";
 import newcoll from "../Controller/ProductController/newCollectionData.js";
 import popinWomen from "../Controller/ProductController/popularInWomen.js";
 import relatedPro from "../Controller/ProductController/relatedProduct.js";
+import createOrder from "../Controller/ProductController/createOrder.js";
+import verifyPayment from "../Controller/ProductController/verifyPayment.js";
+import saveOrder from "../Controller/ProductController/saveOrder.js";
 const router = express.Router();
 
 // Define the POST route for adding a product
@@ -19,7 +22,9 @@ router.get("/newcollection",newcoll);
 router.get("/popularInwomen",popinWomen);
 router.get("/relatedProduct",relatedPro);
 
-
-
+// Razorpay routes
+router.post("/create-order", createOrder);
+router.post("/verify-payment", verifyPayment);
+router.post("/save-order", saveOrder);
 
 export default router;
