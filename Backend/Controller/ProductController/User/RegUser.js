@@ -1,5 +1,7 @@
 import user from "../../../Model/UserSchema.js";
 import jwt from 'jsonwebtoken';
+import { generateVerificationCode, sendVerificationEmail } from '../../../utils/emailService.js';
+import bcrypt from 'bcrypt';
 
 const RegUser = async (req, res) => {
   try {
@@ -19,16 +21,29 @@ const RegUser = async (req, res) => {
       cart[i] = 0;
     }
 
+    // Generate verification code
+    const verificationCode = generateVerificationCode();
+    
+    // Hash the verification code
+    const salt = await bcrypt.genSalt(10);
+    const hashedToken = await bcrypt.hash(verificationCode, salt);
+    
     // Create a new user instance
     const newUser = new user({
       name: req.body.username,
       email: req.body.email,
       password: req.body.password, // Consider hashing the password before saving
       cartData: cart,
+      isVerified: false,
+      verificationToken: hashedToken,
+      verificationTokenExpiry: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes expiry
     });
 
     // Save the new user to the database
     await newUser.save();
+
+    // Send verification email
+    await sendVerificationEmail(req.body.email, req.body.username, verificationCode);
 
     // Create a token for the newly registered user
     const data = {
@@ -37,11 +52,12 @@ const RegUser = async (req, res) => {
       },
     };
 
-    const token = jwt.sign(data, 'secret_ecom', { expiresIn: '1h' }); // Consider using an environment variable for the secret
+    const token = jwt.sign(data, process.env.JWT_SECRET || 'secret_ecom', { expiresIn: '1h' });
 
     res.json({
       success: true,
       token,
+      message: "Registration successful. Please verify your email to activate your account."
     });
   } catch (error) {
     console.error('Error during registration:', error);
@@ -59,6 +75,15 @@ const RegUser = async (req, res) => {
     });
   
     if (users) {
+      // Check if user is verified
+      if (!users.isVerified) {
+        return res.status(401).json({
+          success: false,
+          error: 'Please verify your email before logging in',
+          needsVerification: true
+        });
+      }
+
       const pswdcomp = req.body.password === users.password;
       if (pswdcomp) {
         const data = {
@@ -66,10 +91,11 @@ const RegUser = async (req, res) => {
             id: users.id,
           },
         };
-        const token = jwt.sign(data, 'secret_ecom');
+        const token = jwt.sign(data, process.env.JWT_SECRET || 'secret_ecom');
         res.json({
           success: true,
           token,
+          name: users.name,
         });
       } else {
         res.json({

@@ -18,6 +18,22 @@ const userSchema = new mongoose.Schema({
   cartData: {
     type: Object,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: {
+    type: String,
+  },
+  verificationTokenExpiry: {
+    type: Date,
+  },
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpiry: {
+    type: Date,
+  },
   createdAt: { // Use 'createdAt' for better clarity
     type: Date,
     default: Date.now,

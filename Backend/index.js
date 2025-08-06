@@ -52,6 +52,20 @@ const fetchUser = async (req, res, next) => {
     try {
         const data = jwt.verify(token, JWT_SECRET);
         req.user = data.user;
+        
+        // Check if user is verified
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).send({ errors: "User not found" });
+        }
+        
+        if (!user.isVerified) {
+            return res.status(403).send({ 
+                errors: "Email not verified", 
+                needsVerification: true 
+            });
+        }
+        
         next();
     } catch (error) {
         return res.status(401).send({ errors: "Please authenticate using a valid token" });
