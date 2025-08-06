@@ -28,11 +28,15 @@ const RegUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedToken = await bcrypt.hash(verificationCode, salt);
     
+    // Hash the password
+    const passwordSalt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, passwordSalt);
+    
     // Create a new user instance
     const newUser = new user({
       name: req.body.username,
       email: req.body.email,
-      password: req.body.password, // Consider hashing the password before saving
+      password: hashedPassword, // Storing hashed password
       cartData: cart,
       isVerified: false,
       verificationToken: hashedToken,
@@ -84,7 +88,8 @@ const RegUser = async (req, res) => {
         });
       }
 
-      const pswdcomp = req.body.password === users.password;
+      // Compare password with hashed password in database
+      const pswdcomp = await bcrypt.compare(req.body.password, users.password);
       if (pswdcomp) {
         const data = {
           user: {

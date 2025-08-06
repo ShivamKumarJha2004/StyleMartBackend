@@ -14,7 +14,9 @@ import {
   sendVerificationCode, 
   verifyEmail, 
   sendPasswordResetCode, 
-  resetPassword 
+  resetPassword,
+  sendPreRegistrationCode,
+  completeRegistration
 } from "../Controller/ProductController/User/EmailVerification.js";
 const router = express.Router();
 
@@ -22,12 +24,18 @@ const router = express.Router();
 router.post("/addproduct", productController);
 router.post("/deleteproduct",removeProduct);
 router.get("/allproduct",allproduct);
-router.post("/signUp",RegUser);
+
+// User authentication routes
+router.post("/pre-register", sendPreRegistrationCode); // Step 1: Send verification code
+router.post("/complete-registration", completeRegistration); // Step 2: Verify and create account
 router.post("/login",userLogin);
 
+// Legacy route (can be removed later)
+router.post("/signUp",RegUser);
+
 // Email verification and password reset routes
-router.post("/send-verification-code", sendVerificationCode);
-router.post("/verify-email", verifyEmail);
+router.post("/send-verification-code", sendVerificationCode); // For existing users
+router.post("/verify-email", verifyEmail); // For existing users
 router.post("/forgot-password", sendPasswordResetCode);
 router.post("/reset-password", resetPassword);
 router.get("/newcollection",newcoll);
