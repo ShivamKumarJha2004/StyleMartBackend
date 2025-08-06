@@ -13,12 +13,6 @@ export const sendVerificationCode = async (req, res) => {
     
     // Check if user exists
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-    }
     
     // Generate verification code
     const verificationCode = generateVerificationCode();
