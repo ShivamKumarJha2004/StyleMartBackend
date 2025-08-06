@@ -13,10 +13,10 @@ export const sendVerificationCode = async (req, res) => {
     
     // Check if user exists
     const user = await User.findOne({ email });
-    if (!user) {
+    if (user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found',
+        error: 'User Already Registered !!',
       });
     }
     
@@ -40,7 +40,6 @@ export const sendVerificationCode = async (req, res) => {
       success: true,
       message: 'Verification code sent to your email',
     });
-  
   } catch (error) {
     console.error('Error sending verification code:', error);
     res.status(500).json({
@@ -97,7 +96,7 @@ export const verifyEmail = async (req, res) => {
     console.error('Error verifying email:', error);
     res.status(500).json({
       success: false,
-      error: 'error.message',
+      error: 'Internal Server Error',
     });
   }
 };
