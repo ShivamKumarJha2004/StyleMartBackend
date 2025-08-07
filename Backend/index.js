@@ -6,6 +6,7 @@ import path from "path";
 import cors from "cors";
 import { fileURLToPath } from 'url';
 import productRoutes from "./Routes/productRoutes.js";
+import adminRoutes from "./Routes/adminRoutes.js";
 import User from "./Model/UserSchema.js";
 import dotenv from "dotenv";
 
@@ -31,8 +32,9 @@ app.use(cors({
 // Serve static files for images and other assets
 app.use("/images", express.static(path.resolve(__dirname, 'upload/images')));
 
-// Use product routes
+// Use routes
 app.use("/api", productRoutes);
+app.use("/api/admin", adminRoutes);
 
 // MongoDB connection
 mongoose.connect(MONGODB_URI, {
@@ -90,7 +92,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     // Return the image URL in the response
     res.json({
         success: 1,
-        image_url: `https://stylemartbackend.onrender.com/images/${req.file.filename}` 
+        image_url: `https://stylemart-backend-1.onrender.com//images/${req.file.filename}` 
     });
 });
 
