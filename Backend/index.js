@@ -92,7 +92,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
     // Return the image URL in the response
     res.json({
         success: 1,
-        image_url: `https://stylemart-backend-1.onrender.com//images/${req.file.filename}` 
+        image_url: `https://stylemart-backend-1.onrender.com/images/${req.file.filename}` 
     });
 });
 

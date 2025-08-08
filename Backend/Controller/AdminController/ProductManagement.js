@@ -118,7 +118,6 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // Update product fields
     if (name) product.name = name;
     if (image) product.image = image;
     if (category) product.category = category;

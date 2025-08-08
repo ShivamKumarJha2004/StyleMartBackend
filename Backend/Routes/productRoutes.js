@@ -18,6 +18,8 @@ import {
   sendPreRegistrationCode,
   completeRegistration
 } from "../Controller/ProductController/User/EmailVerification.js";
+import { verifyUserToken } from '../Middleware/adminAuth.js';
+
 const router = express.Router();
 
 // Define the POST route for adding a product
@@ -43,8 +45,8 @@ router.get("/popularInwomen",popinWomen);
 router.get("/relatedProduct",relatedPro);
 
 // Razorpay routes
-router.post("/create-order", createOrder);
-router.post("/verify-payment", verifyPayment);
-router.post("/save-order", saveOrder);
+router.post("/create-order",verifyUserToken, createOrder);
+router.post("/verify-payment",verifyUserToken, verifyPayment);
+router.post("/save-order",verifyUserToken, saveOrder);
 
 export default router;

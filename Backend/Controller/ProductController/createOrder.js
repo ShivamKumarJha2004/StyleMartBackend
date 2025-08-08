@@ -46,6 +46,7 @@ const createOrder = async (req, res) => {
     return res.status(200).json({
       success: true,
       order,
+      
       key_id: process.env.Razor_Pay_Key_ID // Send key_id for frontend initialization
     });
   } catch (error) {

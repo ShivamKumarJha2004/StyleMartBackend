@@ -40,6 +40,28 @@ export const verifyAdminToken = async (req, res, next) => {
     });
   }
 };
+export const verifyUserToken = async (req, res, next) => {
+  try {
+    // Get token from header
+    const token = req.header('x-auth-token');
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'No token, authorization denied',
+      });
+    }
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_ecom_admin');
+    req.user = decoded.user;
+    next();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(401).json({
+      success: false,
+      error: 'Token is not valid',
+    });
+  }
+};
 
 /**
  * Middleware to check if user is an admin
